@@ -4,7 +4,7 @@ Donate link: http://ulogin.ru/
 Tags: ulogin, login, social, authorization
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 1.3
+Stable tag: 1.4
 
 Форма авторизации uLogin через социальные сети. Улучшенный аналог loginza.
 
@@ -44,6 +44,8 @@ uLogin — это инструмент, который позволяет пол
 * Добавлена функция ulogin_panel() для ручного вывода панели.
 = 1.3 =
 * Исправлена ошибка, возникающая, если email уже был в базе.
+= 1.4 =
+* Исправлена ошибка, возникающая, из-за динамического подключения скрипта
 
 == Upgrade Notice ==
 

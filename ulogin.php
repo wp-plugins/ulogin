@@ -3,7 +3,7 @@
 Plugin Name: uLogin - виджет авторизации через социальные сети
 Plugin URI: http://ulogin.ru/
 Description: uLogin
-Version: 1.3
+Version: 1.4
 Author: uLogin
 Author URI: http://ulogin.ru/
 License: GPL2
@@ -17,6 +17,7 @@ function ulogin_comment_form() {
 	if ($current_user->ID == 0) {
 		?>
 		<script type="text/javascript">
+			var uLogin_query = 'display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform');
 			(function() {
 				var form = document.getElementById('commentform');
 				if (form) {
@@ -24,7 +25,7 @@ function ulogin_comment_form() {
 					div.innerHTML = '<div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div>';
 					form.parentNode.insertBefore(div, form);
 					var s = document.createElement('script');
-					s.src = 'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform');
+					s.src = 'http://ulogin.ru/js/widget.js';
 					document.body.appendChild(s);
 				}
 			})();
@@ -37,8 +38,9 @@ function ulogin_panel() {
 	if ($current_user->ID == 0) {
 		echo '<div><div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div></div>' . 
 		'<script type="text/javascript">' .
+		'var uLogin_query = \'display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\');' .
 		'var s = document.createElement(\'script\');' . 
-		's.src = \'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\');' . 
+		's.src = \'http://ulogin.ru/js/widget.js\';' . 
 		'document.body.appendChild(s);' . 
 		'</script>';
 	}
