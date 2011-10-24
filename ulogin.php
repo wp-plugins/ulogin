@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: uLogin
-Plugin URI: http://ulogin.ru/wordpress/
+Plugin Name: uLogin - виджет авторизации через социальные сети
+Plugin URI: http://ulogin.ru/
 Description: uLogin
-Version: 1.1
+Version: 1.3
 Author: uLogin
 Author URI: http://ulogin.ru/
 License: GPL2
@@ -24,7 +24,7 @@ function ulogin_comment_form() {
 					div.innerHTML = '<div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div>';
 					form.parentNode.insertBefore(div, form);
 					var s = document.createElement('script');
-					s.src = 'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook,twitter,google,yandex,livejournal,openid&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform');
+					s.src = 'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform');
 					document.body.appendChild(s);
 				}
 			})();
@@ -38,7 +38,7 @@ function ulogin_panel() {
 		echo '<div><div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div></div>' . 
 		'<script type="text/javascript">' .
 		'var s = document.createElement(\'script\');' . 
-		's.src = \'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook,twitter,google,yandex,livejournal,openid&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\');' . 
+		's.src = \'http://ulogin.ru/js/widget.js?display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\');' . 
 		'document.body.appendChild(s);' . 
 		'</script>';
 	}
@@ -47,15 +47,23 @@ function ulogin_parse_request() {
 	if (isset($_POST['token'])) {
 		$s = file_get_contents('http://ulogin.ru/token.php?token=' . $_POST['token'] . '&host=' . $_SERVER['HTTP_HOST']);
 		$user = json_decode($s, true);
-		$user_id = get_user_by('login', 'ulogin_' . $user['network'] . '_' . $user['uid']);
-		if (isset($user_id->ID)) {
-			$user_id = $user_id->ID;
-		} else {
-			$user_id = wp_insert_user(array('user_pass' => md5(microtime()), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $user['email'], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
+		if (isset($user['uid'])) {
+			$user_id = get_user_by('login', 'ulogin_' . $user['network'] . '_' . $user['uid']);
+			if (isset($user_id->ID)) {
+				$user_id = $user_id->ID;
+			} else {
+				$user_id = wp_insert_user(array('user_pass' => md5(microtime()), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $user['email'], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
+				$i = 0;
+				$email = explode('@', $user['email']);
+				while (!is_int($user_id)) {
+					$i++;
+					$user_id = wp_insert_user(array('user_pass' => md5(microtime()), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $email[0] . '+' . $i . '@' . $email[1], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
+				}
+			}
+			update_usermeta($user_id, 'ulogin_photo', $user['photo']);
+			wp_set_current_user($user_id);
+			wp_set_auth_cookie($user_id);
 		}
-		update_usermeta($user_id, 'ulogin_photo', $user['photo']);
-		wp_set_current_user($user_id);
-        wp_set_auth_cookie($user_id);
 	}
 }
 function ulogin_get_avatar($text) {
