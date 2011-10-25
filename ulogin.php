@@ -3,7 +3,7 @@
 Plugin Name: uLogin - виджет авторизации через социальные сети
 Plugin URI: http://ulogin.ru/
 Description: uLogin
-Version: 1.4
+Version: 1.5
 Author: uLogin
 Author URI: http://ulogin.ru/
 License: GPL2
@@ -54,12 +54,12 @@ function ulogin_parse_request() {
 			if (isset($user_id->ID)) {
 				$user_id = $user_id->ID;
 			} else {
-				$user_id = wp_insert_user(array('user_pass' => md5(microtime()), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $user['email'], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
+				$user_id = wp_insert_user(array('user_pass' => wp_generate_password(), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $user['email'], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
 				$i = 0;
 				$email = explode('@', $user['email']);
 				while (!is_int($user_id)) {
 					$i++;
-					$user_id = wp_insert_user(array('user_pass' => md5(microtime()), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $email[0] . '+' . $i . '@' . $email[1], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
+					$user_id = wp_insert_user(array('user_pass' => wp_generate_password(), 'user_login' => 'ulogin_' . $user['network'] . '_' . $user['uid'], 'user_url' => $user['identity'], 'user_email' => $email[0] . '+' . $i . '@' . $email[1], 'first_name' => $user['first_name'], 'last_name' => $user['last_name'], 'display_name' => $user['first_name'] . ' ' . $user['last_name'], 'nickname' => $user['first_name'] . ' ' . $user['last_name']));
 				}
 			}
 			update_usermeta($user_id, 'ulogin_photo', $user['photo']);
