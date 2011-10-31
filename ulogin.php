@@ -3,7 +3,7 @@
 Plugin Name: uLogin - виджет авторизации через социальные сети
 Plugin URI: http://ulogin.ru/
 Description: uLogin
-Version: 1.5
+Version: 1.6
 Author: uLogin
 Author URI: http://ulogin.ru/
 License: GPL2
@@ -12,38 +12,39 @@ License: GPL2
 add_action('comment_form', ulogin_comment_form);
 add_action('parse_request', ulogin_parse_request);
 add_filter('get_avatar', ulogin_get_avatar);
+add_filter('simplemodal_login_form', ulogin_simplemodal_login_form);
+function ulogin_simplemodal_login_form($text) {
+	return str_replace('<div class="simplemodal-login-fields">', '<div class="simplemodal-login-fields">' . ulogin_panel('uLoginSMLF'), $text);
+}
 function ulogin_comment_form() {
 	global $current_user;
 	if ($current_user->ID == 0) {
 		?>
+		<script src="http://ulogin.ru/js/widget.js" type="text/javascript"></script>
 		<script type="text/javascript">
-			var uLogin_query = 'display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform');
 			(function() {
 				var form = document.getElementById('commentform');
 				if (form) {
 					var div = document.createElement('div');
 					div.innerHTML = '<div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div>';
 					form.parentNode.insertBefore(div, form);
-					var s = document.createElement('script');
-					s.src = 'http://ulogin.ru/js/widget.js';
-					document.body.appendChild(s);
+					uLogin.init('id=uLogin&display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=' + encodeURIComponent((location.href.indexOf('#') != -1 ? location.href.substr(0, location.href.indexOf('#')) : location.href) + '#commentform'));
 				}
 			})();
 		</script>
 		<?php
 	}
 }
-function ulogin_panel() {
+function ulogin_panel($id = '') {
 	global $current_user;
 	if ($current_user->ID == 0) {
-		echo '<div><div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="uLogin" style="float:left"></div><div style="clear:both"></div></div>' . 
+		return '<div><div style="float:left;line-height:24px">Войти с помощью:&nbsp;</div><div id="' . ($id != '' ? $id : 'uLogin') . '" style="float:left"></div><div style="clear:both"></div></div>' . 
+		'<script src="http://ulogin.ru/js/widget.js" type="text/javascript"></script>' . 
 		'<script type="text/javascript">' .
-		'var uLogin_query = \'display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\');' .
-		'var s = document.createElement(\'script\');' . 
-		's.src = \'http://ulogin.ru/js/widget.js\';' . 
-		'document.body.appendChild(s);' . 
+		'uLogin.init(\'' . ($id != '' ? 'id=' . $id . '&' : '') . 'display=small&fields=first_name,last_name,email,photo&providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid&redirect_uri=\' + encodeURIComponent((location.href.indexOf(\'#\') != -1 ? location.href.substr(0, location.href.indexOf(\'#\')) : location.href) + \'#commentform\'));' .
 		'</script>';
 	}
+	return '';
 }
 function ulogin_parse_request() {
 	if (isset($_POST['token'])) {
