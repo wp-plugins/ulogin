@@ -2,9 +2,9 @@
 Contributors: lobovkin
 Donate link: http://ulogin.ru/
 Tags: ulogin, login, social, authorization
-Requires at least: 3.1
-Tested up to: 3.2.1
-Stable tag: 1.6
+Requires at least: 2.9
+Tested up to: 3.3.1
+Stable tag: 1.7
 
 Форма авторизации uLogin через социальные сети. Улучшенный аналог loginza.
 
@@ -27,7 +27,7 @@ uLogin — это инструмент, который позволяет пол
 
 = Панель не появилась автоматически в моей теме, что делать? =
 
-Используйте код <?php ulogin_panel(); ?> для ручного вывода панели в любом месте темы.
+Используйте код <?php echo ulogin_panel(); ?> для ручного вывода панели в любом месте темы.
 
 == Screenshots ==
 
@@ -50,6 +50,8 @@ uLogin — это инструмент, который позволяет пол
 * Исправлена генерация пароля на wp_generate_password()
 = 1.6=
 * Добавлена поддержка плагина Simplemodal Login Form
+= 1.7=
+* Исправление ошибок, неограниченное количество сущностей uLogin на странице
 
 
 == Upgrade Notice ==
