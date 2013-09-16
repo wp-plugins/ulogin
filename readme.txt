@@ -3,7 +3,7 @@ Contributors: lobovkin
 Donate link: http://ulogin.ru/
 Tags: ulogin, login, social, authorization
 Requires at least: 2.9
-Tested up to: 3.3.1
+Tested up to: 3.5
 Stable tag: 1.8.2
 
 Форма авторизации uLogin через социальные сети. Улучшенный аналог loginza.
