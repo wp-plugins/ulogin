@@ -20,8 +20,7 @@ register_activation_hook(__FILE__, array( 'uLoginPluginSettings', 'register_ulog
 
 add_action('admin_menu', 'uLoginSettingsPage');
 
-add_action('comment_form_must_log_in_after','ulogin_comment_form773084
-_before_fields');
+add_action('comment_form_must_log_in_after','ulogin_comment_form_before_fields');
 if (!add_action('comment_form_before_fields','ulogin_comment_form_before_fields')){
     add_action('comment_form', 'ulogin_comment_form');
 }
