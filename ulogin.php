@@ -824,7 +824,8 @@ function ulogin_validate_gravatar($email='', $id=0) {
 function ulogin_get_avatar($avatar, $id_or_email, $size, $default, $alt) {
 	if ($default != 'ulogin' && $default != 'wp_user_avatar') { return $avatar; }
 
-    $user_id = parce_id_or_email($id_or_email)['id'];
+    $user_id = parce_id_or_email($id_or_email);
+    $user_id = $user_id['id'];
 
     if (is_plugin_active('wp-user-avatar/wp-user-avatar.php')
         && get_user_meta($user_id, 'wp_user_avatar', 1)) { return $avatar; }
