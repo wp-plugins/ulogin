@@ -3,7 +3,7 @@
 Plugin Name: uLogin - виджет авторизации через социальные сети
 Plugin URI: http://ulogin.ru/
 Description: uLogin — это инструмент, который позволяет пользователям получить единый доступ к различным Интернет-сервисам без необходимости повторной регистрации, а владельцам сайтов — получить дополнительный приток клиентов из социальных сетей и популярных порталов (Google, Яндекс, Mail.ru, ВКонтакте, Facebook и др.)
-Version: 2.0.9
+Version: 2.0.10
 Author: uLogin
 Author URI: http://ulogin.ru/
 License: GPL2
@@ -851,7 +851,8 @@ function ulogin_get_avatar($avatar, $id_or_email, $size, $default, $alt) {
 function ulogin_get_avatar_wpua($avatar, $id_or_email, $size, $default, $alt) {
     if (in_array($default, array('mystery','blank','gravatar_default','identicon','wavatar','monsterid','retro'))) { return $avatar; }
 
-    $user_id = parce_id_or_email($id_or_email)['id'];
+    $user_id = parce_id_or_email($id_or_email);
+    $user_id = $user_id['id'];
 
     if (get_user_meta($user_id, 'wp_user_avatar', 1)) { return $avatar; }
 
