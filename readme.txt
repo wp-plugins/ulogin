@@ -4,7 +4,7 @@ Donate link: http://ulogin.ru/
 Tags: ulogin, login, social, authorization
 Requires at least: 3.0
 Tested up to: 4.1
-Stable tag: 2.0.8.2
+Stable tag: 2.0.9
 License: GPLv2 or later
 
 Форма авторизации uLogin через социальные сети. Улучшенный аналог loginza.
@@ -87,7 +87,7 @@ function get_ulogin_user_accounts_panel($user_id = 0)`
 
 == Changelog ==
 
-= 2.0.8.2 =
+= 2.0.9 =
 * Срочное исправление
 = 2.0.8 =
 * Добавлена поддержка плагина WP User Avatar.
