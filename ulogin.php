@@ -17,6 +17,8 @@ global $current_user;
  * Создание хуков
  */
 register_activation_hook(__FILE__, array( 'uLoginPluginSettings', 'register_ulogin'));
+if (function_exists('register_uninstall_hook'))
+    register_deactivation_hook(__FILE__, 'uninstall_ulogin');
 
 add_action('admin_menu', 'uLoginSettingsPage');
 
@@ -29,6 +31,15 @@ add_action('register_form','ulogin_form_panel');
 add_action('profile_personal_options', 'ulogin_profile_personal_options');
 
 add_filter('request', 'ulogin_request');
+
+/**
+ * Удаление следов плагина при его деактивации
+ */
+function uninstall_ulogin()
+{
+    if (get_option('avatar_default') == 'ulogin')
+        update_option('avatar_default', 'mystery');
+}
 
 /**
  *  Ссылка для редиректа должна оканчиваться "?ulogin=token"
@@ -70,12 +81,15 @@ if ( is_plugin_active('buddypress/bp-loader.php') ) {
 	function ulogin_bp_core_fetch_avatar( $html, $params ) {
         if (get_option('avatar_default') == 'ulogin') {
             $photo = get_user_meta($params['item_id'], 'ulogin_photo', 1);
-            if (function_exists('bp_get_user_has_avatar')) {
-                $photo = bp_get_user_has_avatar($params['item_id']) ? false : $photo;
-            }
             if ($photo) {
-                return preg_replace('/src=".+?"/', 'src="' . $photo . '"', $html);
+                if (function_exists('bp_get_user_has_avatar')) {
+                    $photo = bp_get_user_has_avatar($params['item_id']) ? false : $photo;
+                }
+                if ($photo) {
+                    return preg_replace('/src=".+?"/', 'src="' . $photo . '"', $html);
+                }
             }
+            $html = preg_replace("/d=ulogin/", "d=mystery", $html);
         }
 		return $html;
 	}
@@ -238,17 +252,30 @@ function ulogin_get_user_from_token($token = false)
 
         $request = 'http://ulogin.ru/token.php?token=' . $token . '&host=' . $_SERVER['HTTP_HOST'] . '&data='.base64_encode(json_encode($data));
 
-        if(in_array('curl', get_loaded_extensions())){
-            $c = curl_init($request);
-            curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
-            $response = curl_exec($c);
-            curl_close($c);
-
-        }elseif (function_exists('file_get_contents') && ini_get('allow_url_fopen')){
-            $response = file_get_contents($request);
-        }
+        $response = ulogin_get_response($request);
     }
     return $response;
+}
+
+
+/**
+ * Получение данных с помощью curl или file_get_contents
+ * @param string $url
+ * @return bool|mixed|string
+ */
+function ulogin_get_response($url="") {
+    $result = false;
+
+    if (in_array('curl', get_loaded_extensions())) {
+        $request = curl_init($url);
+        curl_setopt($request, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($request, CURLOPT_BINARYTRANSFER, 1);
+        $result = curl_exec($request);
+    }elseif (function_exists('file_get_contents') && ini_get('allow_url_fopen')){
+        $result = file_get_contents($url);
+    }
+
+    return $result;
 }
 
 /**
@@ -388,91 +415,8 @@ function ulogin_enter_user($u_user, $user_id){
 
     wp_update_user($update_user_data);
 
-
-    $validate_gravatar = ulogin_validate_gravatar('', $user_id);
-    if ($validate_gravatar) {
-        update_user_meta( $user_id, 'ulogin_photo_gravatar', 1 );
-        $q = false;
-    } else {
-        delete_user_meta( $user_id, 'ulogin_photo_gravatar');
-        $q = true;
-    }
-
-    $file_url = (isset($u_user['photo_big']) and !empty($u_user['photo_big'])) ? $u_user['photo_big'] : ((isset($u_user['photo']) and !empty($u_user['photo'])) ? $u_user['photo'] : '');
-    $q = isset($file_url) ? true && $q : false && $q;
-
-
-    //directory to import to
-    $avatar_dir = str_replace('\\','/',dirname(dirname(dirname(dirname(__FILE__))))).'/wp-content/uploads/';
-    if($q && !file_exists($avatar_dir)) {
-        $q = mkdir($avatar_dir);
-    }
-    $avatar_dir .= 'ulogin_avatars/';
-    if($q && !file_exists($avatar_dir)) {
-        $q = mkdir($avatar_dir);
-    }
-
-    if ($q && @fclose(@fopen($file_url, "r"))) { //make sure the file actually exists
-        $filename = $u_user['network'] . '_' . $u_user['uid'];
-
-	    list($width, $height, $type) = getimagesize($file_url);
-	    if ($width/$height > 1) {
-		    $max_size = $width;
-	    } else {
-		    $max_size = $height;
-	    }
-
-	    $thumb = wp_imagecreatetruecolor($max_size, $max_size);
-
-        switch ($type) {
-            case IMAGETYPE_GIF:
-                $res = '.gif';
-	            $source = imagecreatefromgif($file_url);
-                break;
-            case IMAGETYPE_JPEG:
-                $res = '.jpg';
-	            $source = imagecreatefromjpeg($file_url);
-                break;
-            case IMAGETYPE_PNG:
-                $res = '.png';
-	            $source = imagecreatefrompng($file_url);
-                break;
-	        default:
-	            $res = '.jpg';
-	            $source = imagecreatefromjpeg($file_url);
-	            break;
-        }
-
-	    if ( is_resource($thumb) ) {
-		    if ( imagecopy( $thumb, $source, ( $max_size - $width ) / 2, ( $max_size - $height ) / 2, 0, 0, $width, $height ) ) {
-			    imagedestroy( $source );
-		    }
-
-		    $filename = $filename . $res;
-		    switch ( $type ) {
-			    case IMAGETYPE_GIF:
-				    imagegif( $thumb, $avatar_dir . $filename );
-				    break;
-			    case IMAGETYPE_JPEG:
-				    imagejpeg( $thumb, $avatar_dir . $filename );
-				    break;
-			    case IMAGETYPE_PNG:
-				    imagepng( $thumb, $avatar_dir . $filename );
-				    break;
-			    default:
-				    imagejpeg( $thumb, $avatar_dir . $filename );
-				    break;
-		    }
-		    imagedestroy( $thumb );
-
-		    if ( $q ) {
-			    if ( function_exists( 'update_user_meta' ) ) {
-				    update_user_meta( $user_id, 'ulogin_photo', home_url() . '/wp-content/uploads/ulogin_avatars/' . $filename );
-			    } else {
-				    update_usermeta( $user_id, 'ulogin_photo', home_url() . '/wp-content/uploads/ulogin_avatars/' . $filename );
-			    }
-		    }
-	    }
+    if ($avatar_url = ulogin_get_user_photo($u_user, $user_id)) {
+        update_user_meta($user_id, 'ulogin_photo', $avatar_url);
     }
 
     wp_set_current_user($user_id);
@@ -489,6 +433,123 @@ function ulogin_enter_user($u_user, $user_id){
         ulogin_wp_redirect($login_page);
     }
     exit;
+}
+
+/**
+ * Получение аватара пользователя
+ * @param $u_user
+ * @param $user_id
+ * @return string
+ */
+function ulogin_get_user_photo($u_user, $user_id) {
+    $q = true;
+
+    $validate_gravatar = ulogin_validate_gravatar('', $user_id);
+    if ($validate_gravatar) {
+        update_user_meta( $user_id, 'ulogin_photo_gravatar', 1 );
+        return false;
+    }
+
+    delete_user_meta( $user_id, 'ulogin_photo_gravatar');
+
+    $u_user['photo'] = $u_user['photo'] === "https://ulogin.ru/img/photo.png" ? '' : $u_user['photo'];
+    $u_user['photo_big'] = $u_user['photo_big'] === "https://ulogin.ru/img/photo_big.png" ? '' : $u_user['photo_big'];
+
+    $file_url = (isset($u_user['photo_big']) and !empty($u_user['photo_big']))
+        ? $u_user['photo_big']
+        : ((isset($u_user['photo']) and !empty($u_user['photo'])) ? $u_user['photo'] : '');
+
+    if (empty($file_url)) { return false; }
+
+    //directory to import to
+    $avatar_dir = str_replace('\\','/',dirname(dirname(dirname(dirname(__FILE__))))).'/wp-content/uploads/';
+    if(!file_exists($avatar_dir)) {
+        $q = mkdir($avatar_dir);
+    }
+
+    $avatar_dir .= 'ulogin_avatars/';
+    if($q && !file_exists($avatar_dir)) {
+        $q = mkdir($avatar_dir);
+    }
+
+    if (!$q) { return false; }
+
+    $response = ulogin_get_response($file_url, false);
+    $response = (!$response && in_array('curl', get_loaded_extensions())) ? file_get_contents($file_url) : $response;
+
+    if (!$response) { return false; }
+
+    $filename = $u_user['network'] . '_' . $u_user['uid'];
+
+    $file_addr = $avatar_dir . $filename;
+
+    $handle = fopen($file_addr, "w");
+    $fileSize = fwrite($handle, $response);
+    fclose($handle);
+
+    if(!$fileSize) {
+        @unlink($file_addr);
+        return false;
+    }
+
+    list($width, $height, $type) = getimagesize($file_addr);
+    if ($width/$height > 1) {
+        $max_size = $width;
+    } else {
+        $max_size = $height;
+    }
+
+    $thumb = wp_imagecreatetruecolor($max_size, $max_size);
+    if (!is_resource($thumb)) {
+        @unlink($file_addr);
+        return false;
+    }
+
+    switch ($type) {
+        case IMAGETYPE_GIF:
+            $res = '.gif';
+            $source = imagecreatefromgif($file_addr);
+            break;
+        case IMAGETYPE_JPEG:
+            $res = '.jpg';
+            $source = imagecreatefromjpeg($file_addr);
+            break;
+        case IMAGETYPE_PNG:
+            $res = '.png';
+            $source = imagecreatefrompng($file_addr);
+            break;
+        default:
+            $res = '.jpg';
+            $source = imagecreatefromjpeg($file_addr);
+            break;
+    }
+
+    if ( imagecopy( $thumb, $source, ( $max_size - $width ) / 2, ( $max_size - $height ) / 2, 0, 0, $width, $height ) ) {
+        imagedestroy($source);
+        @unlink($file_addr);
+    } else {
+        @unlink($file_addr);
+        return false;
+    }
+
+    $filename = $filename . $res;
+    switch ( $type ) {
+        case IMAGETYPE_GIF:
+            imagegif( $thumb, $avatar_dir . $filename );
+            break;
+        case IMAGETYPE_JPEG:
+            imagejpeg( $thumb, $avatar_dir . $filename );
+            break;
+        case IMAGETYPE_PNG:
+            imagepng( $thumb, $avatar_dir . $filename );
+            break;
+        default:
+            imagejpeg( $thumb, $avatar_dir . $filename );
+            break;
+    }
+    imagedestroy( $thumb );
+
+    return home_url() . '/wp-content/uploads/ulogin_avatars/' . $filename;
 }
 
 /**
@@ -593,7 +654,7 @@ function ulogin_registration_user($u_user, $in_db = 0){
 
         $user_id = wp_insert_user($insert_user);
 
-        if (!is_wp_error($user_id) && $user_id > 0 && ($uLoginOptions['mail'] == 1)){
+        if (!is_wp_error($user_id) && $user_id > 0 && ($uLoginOptions['new_user_notification'] == true)){
             wp_new_user_notification($user_id, $user_pass);
         }
         return ulogin_insert_row($user_id, $u_user['identity'], $network);
@@ -816,13 +877,10 @@ function ulogin_validate_gravatar($email='', $id=0) {
 
 	$hash = md5(strtolower(trim($email)));
 	$uri = 'http://www.gravatar.com/avatar/' . $hash . '?d=404';
-	$headers = @get_headers($uri);
-	if (!preg_match("|200|", $headers[0])) {
-		$has_valid_avatar = false;
-	} else {
-		$has_valid_avatar = true;
-	}
-	return $has_valid_avatar;
+
+    $response = wp_remote_head($uri);
+
+	return !is_wp_error($response) && $response['response']['code'] == '200';
 }
 
 
@@ -846,7 +904,7 @@ function ulogin_get_avatar($avatar, $id_or_email, $size, $default, $alt) {
 
     if (get_user_meta($user_id, 'ulogin_photo_gravatar', 1)
         && !get_option('wp_user_avatar_disable_gravatar')) {
-        $avatar =  preg_replace("/src='(.+?)(&amp;d=ulogin)(.+?)'/", "src='\$1&amp;d=mystery\$3'", $avatar);
+        $avatar =  preg_replace("/d=ulogin/", "d=mystery", $avatar);
         return $avatar;
     }
 
@@ -872,7 +930,7 @@ function ulogin_get_avatar_wpua($avatar, $id_or_email, $size, $default, $alt) {
 
     if (get_user_meta($user_id, 'ulogin_photo_gravatar', 1)
         && !get_option('wp_user_avatar_disable_gravatar')) {
-        $avatar =  preg_replace("/src='(.+?)(&amp;d=ulogin)(.+?)'/", "src='\$1&amp;d=mystery\$3'", $avatar);
+        $avatar =  preg_replace("/d=ulogin/", "d=mystery", $avatar);
         return $avatar;
     }
 
@@ -885,7 +943,7 @@ function ulogin_get_avatar_wpua($avatar, $id_or_email, $size, $default, $alt) {
 }
 
 /*
- * Возвращает url аватара по умолчению пользователя для плагина wp-user-avatar
+ * Возвращает url аватара по умолчанию пользователя для плагина wp-user-avatar
  */
 function ulogin_get_avatar_original_wpua($default) {
     global $current_user;
@@ -1059,6 +1117,8 @@ function ulogin_synchronisation_panel (){
 		                        nw = accounts.find('[data-ulogin-network='+network+']');
 	                        if (nw.length > 0) nw.hide();
                             break;
+                        default:
+                            break;
                     }
                 }
             });
@@ -1066,7 +1126,6 @@ function ulogin_synchronisation_panel (){
     </script>
     <div id="ulogin_synchronisation">
         <h3 title="<?php echo $str_info['about1'] ?>"><?php echo $str_info['h3'] ?></h3>
-        <span class="description"><?php echo $str_info['about0'] ?></span>
         <table class="form-table">
             <tr>
                 <th><label><?php echo $str_info['str1'] ?></label></th>
