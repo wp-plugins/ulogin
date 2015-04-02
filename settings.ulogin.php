@@ -1,6 +1,6 @@
 <?php
 
-/**
+/*
  * uLogin Settings class
  */
 
@@ -14,7 +14,6 @@ if (!class_exists("uLoginPluginSettings")) {
                                         'uloginID1' => '',
                                         'uloginID2' => '',
                                         'uloginID3' => '',
-                                        'new_user_notification' => true,
                                        );
 
         static private $_uLoginDefaultOptions = array(
@@ -142,12 +141,6 @@ if (!class_exists("uLoginPluginSettings")) {
                     $uLoginOptions['set_url'] = false;
                 }
 
-                if (isset($_POST['ulogin_new_user_notification'])) {
-                    $uLoginOptions['new_user_notification'] = true;
-                } else {
-                    $uLoginOptions['new_user_notification'] = false;
-                }
-
                 if (isset($_POST['uloginID1'])) {
                     $uLoginOptions['uloginID1'] = $_POST['uloginID1'];
                 }
@@ -170,7 +163,6 @@ if (!class_exists("uLoginPluginSettings")) {
             $form = str_replace('{ULOGINID2}', $uLoginOptions['uloginID2'], $form);
             $form = str_replace('{ULOGINID3}', $uLoginOptions['uloginID3'], $form);
             $form = str_replace('{SETURL_CHECKED}', $uLoginOptions['set_url'] ? 'checked="checked"' : '', $form);
-            $form = str_replace('{NEW_USER_NOTIFICATION_CHECKED}', $uLoginOptions['new_user_notification'] ? 'checked="checked"' : '', $form);
 
             //Текстовые поля страницы для перевода
             $form = str_replace('{HEADER_TXT}', __('Настройки плагина <b>uLogin</b>'), $form);
@@ -190,13 +182,11 @@ if (!class_exists("uLoginPluginSettings")) {
             $form = str_replace('{LABEL_ULOGINID3_TXT}', $ulogin_label[2], $form);
 
             $form = str_replace('{LABEL_SETURL_TXT}', 'Сохранять ссылку на профиль', $form);
-            $form = str_replace('{LABEL_NEW_USER_NOTIFICATION_TXT}', 'Отправлять письмо при регистрации нового пользователя', $form);
 
             $form = str_replace('{ULOGINID1_DESCR}', 'Идентификатор виджета в окне входа и регистрации. Пустое поле - виджет по умолчанию', $form);
             $form = str_replace('{ULOGINID2_DESCR}', 'Идентификатор виджета для комментариев. Пустое поле - виджет по умолчанию', $form);
             $form = str_replace('{ULOGINID3_DESCR}', 'Идентификатор виджета для профиля пользователя. Пустое поле - виджет по умолчанию', $form);
             $form = str_replace('{LABEL_DESCR}',     'Текст типа "Войти с помощью:"', $form);
-            $form = str_replace('{NEW_USER_NOTIFICATION_DESCR}',     'Уведомляет по почте администратора сайта о регистрации нового пользователя и отправляет пользователю письмо с логином и паролем для авторизации', $form);
             $form = str_replace('{SETURL_DESCR}',    'Сохранять ссылку на страницу пользователя в соцсети при авторизации через uLogin', $form);
 
             echo $form;
@@ -259,10 +249,7 @@ if (!class_exists("uLoginPluginSettings")) {
 	        }
 
 	        if (empty($uloginID)){
-                if ($ulOptions['label'] != 'Войти с помощью:')
-                    $valid_label = $ulOptions['label'];
-                $ulOptions = self::getOldOptions();
-                $ulOptions['label'] = $valid_label;
+		        $ulOptions = self::getOldOptions();
 		        $default_panel = true;
 	        }
 
